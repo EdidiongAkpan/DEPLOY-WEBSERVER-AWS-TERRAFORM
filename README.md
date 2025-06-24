@@ -207,11 +207,11 @@ Input:
 
 In the terminal, run the following:
 
-terraform init          # Initialize our project
-terraform plan          # Preview the infrastructure
-terraform fmt           # Format the 
-terraform validate      # Validate configuration
-terraform apply         # Apply and create resources to our AWS
+1)terraform init          # Initialize our project
+2)terraform plan          # Preview the infrastructure
+3)terraform fmt           # Format the 
+4)erraform validate       #Validate configuration
+5)terraform apply         # Apply and create resources to our AWS
 
 
 ## Step 8: Verify Deployment
