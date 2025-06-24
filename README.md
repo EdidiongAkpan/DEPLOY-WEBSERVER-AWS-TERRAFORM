@@ -202,7 +202,6 @@ Input:
 2. Name it web-server-key.
 3. This matches the value used in the Terraform EC2 resource block.
 
----
 
 ## Step 7: Run Terraform Commands
 
@@ -214,7 +213,6 @@ terraform fmt           # Format the
 terraform validate      # Validate configuration
 terraform apply         # Apply and create resources to our AWS
 
----
 
 ## Step 8: Verify Deployment
 
