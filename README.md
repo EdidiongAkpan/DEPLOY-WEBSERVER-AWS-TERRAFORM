@@ -1,50 +1,58 @@
-DEPLOYING A WEBSERVER ON AWS USING TERRAFORM.
 
-presquisites:
-1) AWS Account
-2) VS code or any IDE
-3) Terraform installed  
-4) AWS CLI installed. 
+# Deploying a Web Server on AWS Using Terraform
 
-STEP1:
- -create a folder for your project on your local machine named "Deploy-Webserver-AWS-Terraform"  or give any name suitable for your project.
- -Go to vscode and open the folder created
- -Create these files inside the project folder provider.tf, main.tf, variable.tf (.tf represents the terraform file extension)
+# Prerequisites
 
- STEP2:
-  -Open provider.tf file and paste this below. This indicates the region which our resources will be created on AWS.
+- AWS Account  
+- VS Code or any IDE  
+- Terraform installed  
+- AWS CLI installed  
 
-  provider "aws" {
+
+
+# Step 1: Set Up Your Project
+
+1. Create a folder for your project (Deploy-Webserver-AWS-Terraform).
+2. Open the folder on VS Code.
+3. Inside the project folder, create the following files:
+   - `provider.tf'
+   -  main.tf
+   - variable.tf
+
+
+
+## Step 2: Configure the AWS Provider
+
+Open provider.tf and paste the following code. This sets the AWS region where your resources will be created:
+
+provider "aws" {
   region = "us-east-1"
 }
-  
-
- STEP3:
- - Open the main.tf file. This file contain blocks of resources of our terraform code. Each block of it enables our web server to be deplpoyed and functioned properly as stated below in its sequential order;
 
 
 
-#Ec2 instance created. 
-#The Acces key to allow our ssh login is referenced as the variable  name "web-server-key"
-#VPC id,subnet and others are referenced here too
-#the user data consist of bash commands and our apache package to be installed on our web server alongside the message to be displayed when our server comes up, it will be directed to the file location of apache  package /var/www/html/index.hmtl
+# Step 3: Define Resources in `main.tf`
 
+This file contains the Terraform resource blocks.
+
+# EC2 Instance
 
 resource "aws_instance" "web-server" {
-  ami           = "ami-020cba7c55df1f615"
-  instance_type = "t2.micro"
-  key_name      = "web-server-key"
-  vpc_security_group_ids = [aws_security_group.web-server-SG.id]
-  subnet_id = aws_subnet.web-server-subnet.id
+  ami                         = "ami-020cba7c55df1f615"
+  instance_type               = "t2.micro"
+  key_name                    = "web-server-key"
+  vpc_security_group_ids      = [aws_security_group.web-server-SG.id]
+  subnet_id                   = aws_subnet.web-server-subnet.id
   associate_public_ip_address = true
+
   user_data = <<-EOF
-        #!/bin/bash 
-        sudo apt update -y
-        sudo apt install apache2 -y
-        sudo systemctl start apache2
-        sudo systemctl enable apache2
-        sudo bash -c 'echo My web server was successfully deployed!> /var/www/html/index.html'
-        EOF
+              #!/bin/bash
+              sudo apt update -y
+              sudo apt install apache2 -y
+              sudo systemctl start apache2
+              sudo systemctl enable apache2
+              sudo bash -c 'echo My web server was successfully deployed! > /var/www/html/index.html'
+              EOF
 
   tags = {
     Name = "web server"
@@ -52,28 +60,25 @@ resource "aws_instance" "web-server" {
 }
 
 
-
-#VPC: A virtual private cloud that manage all our resources on AWS.
+# VPC
 
 resource "aws_vpc" "web-server-vpc" {
   cidr_block = "10.0.0.0/16"
 }
 
 
+# Internet Gateway
 
-
- #Internet gateway(IGW): to allow our resources like the Ec2 to coonect and access the internet
-
-
- resource "aws_internet_gateway" "web-server-gateway" {
+resource "aws_internet_gateway" "web-server-gateway" {
   vpc_id = aws_vpc.web-server-vpc.id
+
   tags = {
     Name = "internet gateway"
   }
 }
 
 
- #custom route table to control how traffic flows in the AWS network. it is referenced to our vpc
+# Route Table
 
 resource "aws_route_table" "web-server-route-table" {
   vpc_id = aws_vpc.web-server-vpc.id
@@ -89,34 +94,26 @@ resource "aws_route_table" "web-server-route-table" {
 }
 
 
-
-
-#subnet to place our EC2 instance in the VPC
+#Subnet
 
 resource "aws_subnet" "web-server-subnet" {
   vpc_id            = aws_vpc.web-server-vpc.id
   cidr_block        = "10.0.1.0/24"
   availability_zone = "us-east-1a"
+
   tags = {
     Name = "web server subnet"
   }
 }
 
-
-
-
-
-#Associate subnet with The Route Table
+# Route Table Association
 
 resource "aws_route_table_association" "Server-Route-Table" {
   subnet_id      = aws_subnet.web-server-subnet.id
   route_table_id = aws_route_table.web-server-route-table.id
 }
 
-
-
-
-#Security group to allow access to our server through the ssh rule,port 22 for server login, HTTP for internet access through port 80, HTTPS for secure login through port 443
+# Security Group
 
 resource "aws_security_group" "web-server-SG" {
   name        = "web-server-SG"
@@ -146,6 +143,7 @@ resource "aws_security_group" "web-server-SG" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -154,12 +152,7 @@ resource "aws_security_group" "web-server-SG" {
   }
 }
 
-
-
-
-
-
-#AWS Elastic Network interface referenced to our Subnet and security group
+# Network Interface
 
 resource "aws_network_interface" "web-server-ENI" {
   subnet_id       = aws_subnet.web-server-subnet.id
@@ -167,63 +160,74 @@ resource "aws_network_interface" "web-server-ENI" {
   security_groups = [aws_security_group.web-server-SG.id]
 }
 
-#ElasticIP to allow access to the internet and also maintain a consistent IP address for HTTP access for users.
+
+# Elastic IP
 
 resource "aws_eip" "web-server-ElasticIP" {
-  domain                    = "vpc"
-  network_interface         = aws_network_interface.web-server-ENI.id
+  domain                   = "vpc"
+  network_interface        = aws_network_interface.web-server-ENI.id
   associate_with_private_ip = "10.0.1.50"
-  depends_on                = [aws_network_interface.web-server-ENI]
+
+  depends_on = [aws_network_interface.web-server-ENI]
 }
 
 
+## Step 4: Create IAM User and Access Key
+
+1. Go to AWS IAM.
+2. Create a new user named `mywebserver` with these roles:
+   - AmazonEC2FullAccess
+   - AmazonVPCFullAccess
+3. Create access key for CLI access.
+4. Download the `.csv` file containing the credentials.
+
+
+## Step 5: Configure AWS CLI
+
+Run this in your terminal (inside your project folder):
+
+'aws configure'
+
+Input:
+
+- Access key ID  :
+- Secret access key:  
+- Region (us-east-1 ) 
+- Output format (json)
+
+
+## Step 6: Create SSH Key Pair
+
+1. In AWS EC2 Dashboard, create a new key pair (`.pem` format).
+2. Name it web-server-key.
+3. This matches the value used in the Terraform EC2 resource block.
+
+---
+
+## Step 7: Run Terraform Commands
+
+In the terminal, run the following:
+
+terraform init          # Initialize our project
+terraform plan          # Preview the infrastructure
+terraform fmt           # Format the 
+terraform validate      # Validate configuration
+terraform apply         # Apply and create resources to our AWS
+
+---
+
+## Step 8: Verify Deployment
+
+1. Go to the AWS Console and verify the resources.
+2. To SSH into your server:
+
+chmod 400 web-server-key.pem
+ssh -i web-server-key.pem ubuntu@<your-ec2-public-ip>
+
+3. Copy your EC2 public IP and paste it in the browser.
+
+If you see the custom Apache message, BOOM! Our web server has been successfully deployed!
 
 
 
-
-
-STEP4: 
--create an IAM user or add a user to a group with right permissions on AWS
-Name; mywebserver
-Attach policies directly
-set policy as AMAZONEC2FULLACCESS, VPCFULLACCESS
-Review and create
-click on the user created, go to security credential
-create Access key
-select command line interface
-give a tag(optional)
-create access key
-download the .csv file to  your local machine. This has the access key and the secret key that will enable us authenticate our terraform with our AWS account. Do not expose the seceret key on github repository or insert it on the terraform for best security practise.
-
-
-STEP5;
-
-- Run "Aws configure" on the terminal which has our terraform folder
-- input the secret key, access key, the availabilty zone and select json to proceed
-
-
-STEP6: 
-
-- navigate to aws ec2 instance dashboard, create a key pair as .pem file. This will enbale us login to our server through ssh login.
-- this key pair name was declared in our resource code(reference our instance block "key_name = web-server-key")
-
-
-STEP7:
--open the terminal on vscode code
--run the below Terraform commands to authenticate our resouces and credentials to Aws.
-Terraform init (this is to initialize our terraform code with our aws account)
-Terraform plan (this displays the resources to be created and the details)
-Terraform fmt (format the code)
-TErraform validate (validates our code and also indicate syntax errors)
-Terraform apply (pushes our artifacts  to Aws)
-
-
-STEP8;
--Check the AWS console to see if all the resources are properly created
--accessing our server through the ssh login by running this command on the terminal
-- chmod 400 web-server-key
-- ssh -i downloads/web-server-key.pem @ubuntu3.142.445.63.
-
-- Go to EC2 instance, copy the public ip address, paste it on the browser
-- if the customized message is displayed
-BOOM ! OUR WEB SERVER HAS BEEN SUCCESSFULLY DEPLOYED AND RUNNING.
+We have successfully deployed a web server on AWS using Terraform.
