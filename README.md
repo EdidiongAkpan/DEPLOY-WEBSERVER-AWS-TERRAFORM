@@ -220,7 +220,7 @@ In the terminal, run the following:
 2. To SSH into your server:
 
 chmod 400 web-server-key.pem
-ssh -i web-server-key.pem ubuntu@<your-ec2-public-ip>
+ssh -i web-server-key.pem ubuntu@your-ec2-public-ip
 
 3. Copy your EC2 public IP and paste it in the browser.
 
