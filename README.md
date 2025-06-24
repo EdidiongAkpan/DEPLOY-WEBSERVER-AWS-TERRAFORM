@@ -203,15 +203,15 @@ Input:
 3. This matches the value used in the Terraform EC2 resource block.
 
 
-## Step 7: Run Terraform Commands
+## Step 7: Run these Terraform Commands
 
 In the terminal, run the following:
 
-1)terraform init          # Initialize our project
-2)terraform plan          # Preview the infrastructure
-3)terraform fmt           # Format the 
-4)erraform validate       #Validate configuration
-5)terraform apply         # Apply and create resources to our AWS
+1.terraform init          
+2.terraform plan         
+3.terraform fmt 
+4.erraform validate       
+5.terraform apply     
 
 
 ## Step 8: Verify Deployment
